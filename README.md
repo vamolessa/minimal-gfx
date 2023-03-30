@@ -12,5 +12,5 @@ build all examples by launching a msvc enabled cmd and invoke `build.bat`
 
 ## resources
 
-[guide to modern opengl functions](https://github.com/fendevel/Guide-to-Modern-OpenGL-Functions)
-[my personal wiki with several rendering resource links](https://github.com/vamolessa/wiki/wiki/from-scratch#rendering)
+- [guide to modern opengl functions](https://github.com/fendevel/Guide-to-Modern-OpenGL-Functions)
+- [my personal wiki with several rendering resource links](https://github.com/vamolessa/wiki/wiki/from-scratch#rendering)
