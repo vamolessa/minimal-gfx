@@ -7,7 +7,7 @@
 // this was made following using this guide to modern opengl functions as a reference:
 // https://github.com/fendevel/Guide-to-Modern-OpenGL-Functions
 //
-// how to compile:
+// build:
 // cl opengl45.c
 //
 
