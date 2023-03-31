@@ -33,7 +33,6 @@ typedef enum { false, true } bool;
 #define OFFSET_OF(type, member) ((size_t)&(((type*)0)->member))
 
 #define DEBUG_LAYER
-#define GET_GL_PROC(type, name) (type)(void*)wglGetProcAddress(name)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // used opengl procedures table
@@ -178,7 +177,7 @@ main(void) {
 
         ASSERT(wglMakeCurrent(dc, gl_rc));
 
-        #define X(type, name) name = GET_GL_PROC(type, #name); ASSERT(name);
+        #define X(type, name) name = (type)(void*)wglGetProcAddress(#name); ASSERT(name);
         WGL_PROCS
         #undef X
 
@@ -300,7 +299,7 @@ main(void) {
     // get required opengl functions
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-    #define X(type, name) name = GET_GL_PROC(type, #name); ASSERT(name);
+    #define X(type, name) name = (type)(void*)wglGetProcAddress(#name); ASSERT(name);
     GL_PROCS
     #undef X
 
