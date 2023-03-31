@@ -42,6 +42,7 @@ typedef enum { false, true } bool;
 X(PFNGLENABLEPROC, glEnable)\
 X(PFNGLDEBUGMESSAGECALLBACKPROC, glDebugMessageCallback)\
 X(PFNGLCLIPCONTROLPROC, glClipControl)\
+X(PFNGLFRONTFACEPROC, glFrontFace)\
 X(PFNGLVIEWPORTPROC, glViewport)\
 X(PFNGLDEPTHFUNCPROC, glDepthFunc)\
 X(PFNGLCLEARNAMEDFRAMEBUFFERFVPROC, glClearNamedFramebufferfv)\
@@ -114,9 +115,16 @@ gl_debug_message_callback(
     (void)length;
     (void)user;
 
-    OutputDebugStringA("GL DEBUG MESSAGE CALLBACK: ");
+    #define PREFIX "GL DEBUG MESSAGE CALLBACK: "
+
+    printf(PREFIX);
+    puts(message);
+
+    OutputDebugStringA(PREFIX);
     OutputDebugStringA(message);
     OutputDebugStringA("\n");
+
+    #undef PREFIX
 
     if (
         type == GL_DEBUG_SOURCE_API || type == GL_DEBUG_SOURCE_WINDOW_SYSTEM || type == GL_DEBUG_SOURCE_SHADER_COMPILER ||
@@ -198,7 +206,7 @@ main(void) {
     HWND window_handle = CreateWindowExW(
         WS_EX_APPWINDOW | WS_EX_WINDOWEDGE,
         window_class_name,
-        /* lpWindowName */ NULL,
+        L"minimal opengl 4.5",
         WS_OVERLAPPEDWINDOW,
         /* X */ CW_USEDEFAULT,
         /* Y */ CW_USEDEFAULT,
@@ -317,9 +325,9 @@ main(void) {
         float vertex_uv[2];
     };
     const struct VertexData vertices[] = {
-        { .vertex_pos = { 0.0f,  0.5f, 0.0f}, .vertex_color = {1.0f, 0.0f, 0.0f, 1.0f}, .vertex_uv = {1.0f, 1.0f} },
-        { .vertex_pos = { 0.5f, -0.5f, 0.0f}, .vertex_color = {0.0f, 1.0f, 0.0f, 1.0f}, .vertex_uv = {1.0f, 0.0f} },
-        { .vertex_pos = {-0.5f, -0.5f, 0.0f}, .vertex_color = {0.0f, 0.0f, 1.0f, 1.0f}, .vertex_uv = {0.0f, 0.0f} },
+        { .vertex_pos = { 0.0f, -0.5f, 0.0f}, .vertex_color = {1.0f, 0.0f, 0.0f, 1.0f}, .vertex_uv = {1.0f, 1.0f} },
+        { .vertex_pos = {-0.5f,  0.5f, 0.0f}, .vertex_color = {0.0f, 0.0f, 1.0f, 1.0f}, .vertex_uv = {0.0f, 0.0f} },
+        { .vertex_pos = { 0.5f,  0.5f, 0.0f}, .vertex_color = {0.0f, 1.0f, 0.0f, 1.0f}, .vertex_uv = {1.0f, 0.0f} },
     };
     ASSERT(sizeof(unsigned short) == 2);
     const unsigned short indices[] = {0, 1, 2};
@@ -488,8 +496,10 @@ main(void) {
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
     // NOTE: make opengl work like direct3d
-    //glClipControl(GL_LOWER_LEFT, GL_NEGATIVE_ONE_TO_ONE);
-    glClipControl(GL_UPPER_LEFT, GL_NEGATIVE_ONE_TO_ONE);
+    glClipControl(GL_UPPER_LEFT, GL_ZERO_TO_ONE);
+
+    glEnable(GL_CULL_FACE);
+    glFrontFace(GL_CW);
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);

@@ -1,2 +1,6 @@
 *.exe
 *.obj
+*.pdb
+
+*.rdbg
+*.ngfx-proj

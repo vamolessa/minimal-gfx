@@ -1,0 +1,45 @@
+map normal <space>b ": build<enter>"
+
+map normal gd :<space>goto-definition<enter>
+
+command next-function @{
+    set-register s "^%a{%w_}%("
+    enqueue-keys n
+}
+
+command insert-separator-comment @{
+    insert-text "///////////////////////////////////////////////////////////////////////////////////////////////////"
+}
+
+command renderdoc-spawn @{
+    spawn "renderdocgui renderdoc.cap"
+}
+
+command ensure-msvc-env @{
+    log diagnostic "setting up msvc env"
+    setup-msvc-env
+}
+
+command build @{
+    ensure-msvc-env
+    open output "log"
+    enqueue-keys aad
+    replace-with-output "cmd /c build.bat 2>&1"
+}
+
+if @platform() == windows @{
+    command msdn-open-manual-from-selection @{
+        spawn "cmd /c start 'https://docs.microsoft.com/en-us/search/?terms=@cursor-selection()'"
+    }
+    map normal <space>mm :<space>msdn-open-manual-from-selection<enter>CV
+
+    command egl-open-manual-from-selection @{
+        spawn "cmd /c start 'https://registry.khronos.org/EGL/sdk/docs/man/html/@cursor-selection().xhtml'"
+    }
+    map normal <space>meg :<space>egl-open-manual-from-selection<enter>CV
+
+    command gl-open-manual-from-selection @{
+        spawn "cmd /c start 'https://duckduckgo.com/?q=in:docs.gl+@cursor-selection()+!'"
+    }
+    map normal <space>mg :<space>gl-open-manual-from-selection<enter>CV
+}
