@@ -319,14 +319,14 @@ main(void) {
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
     struct VertexData {
-        float vertex_pos[3];
-        float vertex_color[4];
-        float vertex_uv[2];
+        float pos[3];
+        float col[4];
+        float uv[2];
     };
     const struct VertexData vertices[] = {
-        { .vertex_pos = { 0.0f, -0.5f, 0.0f}, .vertex_color = {1.0f, 0.0f, 0.0f, 1.0f}, .vertex_uv = {1.0f, 1.0f} },
-        { .vertex_pos = {-0.5f,  0.5f, 0.0f}, .vertex_color = {0.0f, 0.0f, 1.0f, 1.0f}, .vertex_uv = {0.0f, 0.0f} },
-        { .vertex_pos = { 0.5f,  0.5f, 0.0f}, .vertex_color = {0.0f, 1.0f, 0.0f, 1.0f}, .vertex_uv = {1.0f, 0.0f} },
+        { .pos = { 0.0f, -0.5f, 0.0f}, .col = {1.0f, 0.0f, 0.0f, 1.0f}, .uv = {1.0f, 1.0f} },
+        { .pos = {-0.5f,  0.5f, 0.0f}, .col = {0.0f, 0.0f, 1.0f, 1.0f}, .uv = {0.0f, 0.0f} },
+        { .pos = { 0.5f,  0.5f, 0.0f}, .col = {0.0f, 1.0f, 0.0f, 1.0f}, .uv = {1.0f, 0.0f} },
     };
     ASSERT(sizeof(unsigned short) == 2);
     const unsigned short indices[] = {0, 1, 2};
@@ -356,41 +356,41 @@ main(void) {
     // bind the index buffer (there can be only one index buffer)
     glVertexArrayElementBuffer(vertex_array, index_buffer);
 
-    // enables and informs the format of the attribute (vertex shader input) at index 0 (vertex_pos)
+    // enables and informs the format of the attribute (vertex shader input) at index 0 (pos)
     glEnableVertexArrayAttrib(vertex_array, /* attribindex */ 0);
     glVertexArrayAttribFormat(
         vertex_array,
         /* attribindex */ 0,
-        /* size */ LEN(vertices[0].vertex_pos),
+        /* size */ LEN(vertices[0].pos),
         GL_FLOAT,
         /* normalized */ GL_FALSE,
-        /* relativeoffset */ OFFSET_OF(struct VertexData, vertex_pos)
+        /* relativeoffset */ OFFSET_OF(struct VertexData, pos)
     );
     // make the attribute at index 0 take its data from binding 0 (that is, the previously bound vertex buffer)
     glVertexArrayAttribBinding(vertex_array, /* attribindex */ 0, /* bindingindex */ 0);
 
-    // enables and informs the format of the attribute (vertex shader input) at index 1 (vertex_color)
+    // enables and informs the format of the attribute (vertex shader input) at index 1 (col)
     glEnableVertexArrayAttrib(vertex_array, /* attribindex */ 1);
     glVertexArrayAttribFormat(
         vertex_array,
         /* attribindex */ 1,
-        /* size */ LEN(vertices[0].vertex_color),
+        /* size */ LEN(vertices[0].col),
         GL_FLOAT,
         /* normalized */ GL_FALSE,
-        /* relativeoffset */ OFFSET_OF(struct VertexData, vertex_color)
+        /* relativeoffset */ OFFSET_OF(struct VertexData, col)
     );
     // make the attribute at index 0 take its data from binding 0 (that is, the previously bound vertex buffer)
     glVertexArrayAttribBinding(vertex_array, /* attribindex */ 1, /* bindingindex */ 0);
 
-    // enables and informs the format of the attribute (vertex shader input) at index 2 (vertex_uv)
+    // enables and informs the format of the attribute (vertex shader input) at index 2 (uv)
     glEnableVertexArrayAttrib(vertex_array, /* attribindex */ 2);
     glVertexArrayAttribFormat(
         vertex_array,
         /* attribindex */ 2,
-        /* size */ LEN(vertices[0].vertex_color),
+        /* size */ LEN(vertices[0].uv),
         GL_FLOAT,
         /* normalized */ GL_FALSE,
-        /* relativeoffset */ OFFSET_OF(struct VertexData, vertex_color)
+        /* relativeoffset */ OFFSET_OF(struct VertexData, uv)
     );
     // make the attribute at index 0 take its data from binding 0 (that is, the previously bound vertex buffer)
     glVertexArrayAttribBinding(vertex_array, /* attribindex */ 2, /* bindingindex */ 0);
