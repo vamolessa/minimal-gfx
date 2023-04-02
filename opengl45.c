@@ -4,6 +4,12 @@
 // which should be put in a dependencies folder (keep khrplatform inside the "KHR" folder!)
 // they are documented bellow on where to get them
 //
+// features used:
+// - vertex array object (VAO)
+// - vertex buffer object (VBO)
+// - index buffer object (IBO)
+// - uniform buffer object (UBO)
+//
 // this was made following using this guide to modern opengl functions as a reference:
 // https://github.com/fendevel/Guide-to-Modern-OpenGL-Functions
 //
@@ -49,13 +55,14 @@ X(PFNGLCLEARNAMEDFRAMEBUFFERFVPROC, glClearNamedFramebufferfv)\
 X(PFNGLCREATEBUFFERSPROC, glCreateBuffers)\
 X(PFNGLCREATEVERTEXARRAYSPROC, glCreateVertexArrays)\
 X(PFNGLBINDVERTEXARRAYPROC, glBindVertexArray)\
-X(PFNGLDRAWARRAYSPROC, glDrawArrays)\
+X(PFNGLBINDBUFFERBASEPROC, glBindBufferBase)\
 X(PFNGLDRAWELEMENTSPROC, glDrawElements)\
 \
 X(PFNGLCREATESHADERPROGRAMVPROC, glCreateShaderProgramv)\
 X(PFNGLCREATESHADERPROC, glCreateShader)\
 X(PFNGLSHADERSOURCEPROC, glShaderSource)\
 X(PFNGLCOMPILESHADERPROC, glCompileShader)\
+X(PFNGLGETSHADERIVPROC, glGetShaderiv)\
 X(PFNGLCREATEPROGRAMPROC, glCreateProgram)\
 X(PFNGLATTACHSHADERPROC, glAttachShader)\
 X(PFNGLLINKPROGRAMPROC, glLinkProgram)\
@@ -64,6 +71,7 @@ X(PFNGLDELETESHADERPROC, glDeleteShader)\
 X(PFNGLUSEPROGRAMPROC, glUseProgram)\
 \
 X(PFNGLNAMEDBUFFERSTORAGEPROC, glNamedBufferStorage)\
+X(PFNGLNAMEDBUFFERSUBDATAPROC, glNamedBufferSubData)\
 X(PFNGLVERTEXARRAYVERTEXBUFFERPROC, glVertexArrayVertexBuffer)\
 X(PFNGLVERTEXARRAYELEMENTBUFFERPROC, glVertexArrayElementBuffer)\
 X(PFNGLENABLEVERTEXARRAYATTRIBPROC, glEnableVertexArrayAttrib)\
@@ -315,7 +323,7 @@ main(void) {
 #endif
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
-    // create vertex/index buffers and vertex arrays
+    // create vertex, index, vertex array and uniform buffers
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
     struct VertexData {
@@ -395,6 +403,15 @@ main(void) {
     // make the attribute at index 0 take its data from binding 0 (that is, the previously bound vertex buffer)
     glVertexArrayAttribBinding(vertex_array, /* attribindex */ 2, /* bindingindex */ 0);
 
+    struct UniformData {
+        float transform[4][4];
+    };
+
+    // create uniform buffer (UBO)
+    GLuint uniform_buffer = 0;
+    glCreateBuffers(1, &uniform_buffer);
+    glNamedBufferStorage(uniform_buffer, sizeof(struct UniformData), /* data */ NULL, GL_DYNAMIC_STORAGE_BIT);
+
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     // create main texture
     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -433,52 +450,67 @@ main(void) {
     // shaders
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
+    #define SHADER_SRC(...) #__VA_ARGS__
     const char* vertex_shader_src =
         "#version 450\n"
-        "layout(location = 0) in vec3 pos;\n"
-        "layout(location = 1) in vec4 col;\n"
-        "layout(location = 2) in vec2 texcoord;\n"
-        "out vec4 color;\n"
-        "out vec2 uv;\n"
-        "void main() {\n"
-        "    gl_Position = vec4(pos, 1.0);\n"
-        "    color = col;\n"
-        "    uv = texcoord;\n"
-        "}\n";
+        SHADER_SRC(
+            layout(location = 0) in vec3 pos;
+            layout(location = 1) in vec4 col;
+            layout(location = 2) in vec2 texcoord;
+            layout(binding = 0) uniform uniforms0 {
+                mat4 transform;
+            };
+            out vec4 color;
+            out vec2 uv;
+            void main() {
+                gl_Position = transform * vec4(pos, 1.0);
+                color = col;
+                uv = texcoord;
+            }
+        );
 
     const char* frag_shader_src =
         "#version 450\n"
-        "in vec4 color;\n"
-        "in vec2 uv;\n"
-        "out vec4 frag_color;\n"
-        "layout(binding = 0) uniform sampler2D main_texture;\n"
-        "void main() {\n"
-        // NOTE: the `uv * 3.0` will make the checkers texture tile three times
-        "    vec4 tex_color = texture(main_texture, uv * 3.0);\n"
-        "    frag_color = color * tex_color;\n"
-        "}\n";
-
-    char shader_log_buf[4 * 1024];
+        SHADER_SRC(
+        in vec4 color;
+        in vec2 uv;
+        out vec4 frag_color;
+        layout(binding = 0) uniform sampler2D main_texture;
+        void main() {
+            // NOTE: the `uv * 3.0` will make the checkers texture tile three times
+            vec4 tex_color = texture(main_texture, uv * 3.0);
+            frag_color = color * tex_color;
+        }
+        );
+    #undef SHADER_SRC
 
     GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertex_shader, 1, &vertex_shader_src, NULL);
     glCompileShader(vertex_shader);
-
-    glGetShaderInfoLog(vertex_shader, sizeof(shader_log_buf), /* length */ NULL, shader_log_buf);
-    printf("vertex shader compile log:\n%s", shader_log_buf);
-    OutputDebugStringA("vertex shader compile log:\n");
-    OutputDebugStringA(shader_log_buf);
-    OutputDebugStringA("\n");
+    GLint vertex_shader_success = 0;
+    glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &vertex_shader_success);
+    if (!vertex_shader_success) {
+        char shader_log_buf[1024];
+        glGetShaderInfoLog(vertex_shader, sizeof(shader_log_buf), /* length */ NULL, shader_log_buf);
+        OutputDebugStringA("vertex shader compile error:\n");
+        OutputDebugStringA(shader_log_buf);
+        OutputDebugStringA("\n");
+        UNREACHABLE;
+    }
 
     GLuint frag_shader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(frag_shader, 1, &frag_shader_src, NULL);
     glCompileShader(frag_shader);
-
-    glGetShaderInfoLog(frag_shader, sizeof(shader_log_buf), /* length */ NULL, shader_log_buf);
-    printf("frag shader compile log:\n%s", shader_log_buf);
-    OutputDebugStringA("frag shader compile log:\n");
-    OutputDebugStringA(shader_log_buf);
-    OutputDebugStringA("\n");
+    GLint frag_shader_success = 0;
+    glGetShaderiv(frag_shader, GL_COMPILE_STATUS, &frag_shader_success);
+    if (!frag_shader_success) {
+        char shader_log_buf[1024];
+        glGetShaderInfoLog(frag_shader, sizeof(shader_log_buf), /* length */ NULL, shader_log_buf);
+        OutputDebugStringA("frag shader compile error:\n");
+        OutputDebugStringA(shader_log_buf);
+        OutputDebugStringA("\n");
+        UNREACHABLE;
+    }
 
     GLuint shader_program = glCreateProgram();
     glAttachShader(shader_program, vertex_shader);
@@ -487,8 +519,6 @@ main(void) {
 
     glDeleteShader(vertex_shader);
     glDeleteShader(frag_shader);
-
-    glUseProgram(shader_program);
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     // set opengl default state
@@ -522,14 +552,36 @@ main(void) {
         GLsizei window_width = (GLsizei)window_client_size.right;
         GLsizei window_height = (GLsizei)window_client_size.bottom;
 
+        {
+            // NOTE: update uniform buffers
+
+            struct UniformData uniform_data = {
+                .transform = {
+                    {1.0f, 0.0f, 0.0f, 0.0f},
+                    {0.0f, 1.0f, 0.0f, 0.0f},
+                    {0.0f, 0.0f, 1.0f, 0.0f},
+                    {0.0f, 0.0f, 0.0f, 1.0f},
+                },
+            };
+            glNamedBufferSubData(uniform_buffer, /* offset */ 0, sizeof(uniform_data), &uniform_data);
+        }
+
         glViewport(/* x */ 0, /* y */ 0, window_width, window_height);
         glClearNamedFramebufferfv(/* framebuffer */ 0, GL_COLOR, /* drawbuffer */ 0, (float[]){0.8f, 0.6f, 0.4f, 1.0f});
         glClearNamedFramebufferfv(/* framebuffer */ 0, GL_DEPTH, /* drawbuffer */ 0, (float[]){1.0f});
 
-        glBindTextureUnit(0, main_texture);
-        glBindVertexArray(vertex_array);
-        //glDrawArrays(GL_TRIANGLES, /* first */ 0, LEN(vertices));
-        glDrawElements(GL_TRIANGLES, LEN(indices), GL_UNSIGNED_SHORT, /* offset */ 0);
+        {
+            // NOTE: render loop
+
+            glUseProgram(shader_program);
+            glBindTextureUnit(0, main_texture);
+            glBindVertexArray(vertex_array);
+            glBindBufferBase(GL_UNIFORM_BUFFER, /* bindingindex */ 0, uniform_buffer);
+            glDrawElements(GL_TRIANGLES, LEN(indices), GL_UNSIGNED_SHORT, /* offset */ 0);
+        }
+
+        // cleanup opengl state (not really required)
+        glUseProgram(0);
         glBindTextureUnit(0, 0);
         glBindVertexArray(0);
 
