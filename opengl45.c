@@ -555,12 +555,15 @@ main(void) {
         {
             // NOTE: update uniform buffers
 
+            float aspect_ratio = (float)window_width / (float)window_height;
+            float h = 1.7320509f;
             struct UniformData uniform_data = {
                 .transform = {
-                    {1.0f, 0.0f, 0.0f, 0.0f},
-                    {0.0f, 1.0f, 0.0f, 0.0f},
-                    {0.0f, 0.0f, 1.0f, 0.0f},
-                    {0.0f, 0.0f, 0.0f, 1.0f},
+                    // NOTE: a precalculated view projection matrix as an example
+                    {h / aspect_ratio, 0.0f,        0.0f,  0.0f},
+                    {            0.0f,    h,        0.0f,  0.0f},
+                    {            0.0f, 0.0f,  -1.001001f, -1.0f},
+                    {            0.0f, 0.0f, 2.99299312f,  4.0f},
                 },
             };
             glNamedBufferSubData(uniform_buffer, /* offset */ 0, sizeof(uniform_data), &uniform_data);
