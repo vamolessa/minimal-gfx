@@ -9,6 +9,7 @@
 // - vertex buffer object (VBO)
 // - index buffer object (IBO)
 // - uniform buffer object (UBO)
+// - textures
 //
 // this was made following using this guide to modern opengl functions as a reference:
 // https://github.com/fendevel/Guide-to-Modern-OpenGL-Functions
