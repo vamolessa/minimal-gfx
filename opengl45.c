@@ -78,6 +78,7 @@ X(PFNGLVERTEXARRAYELEMENTBUFFERPROC, glVertexArrayElementBuffer)\
 X(PFNGLENABLEVERTEXARRAYATTRIBPROC, glEnableVertexArrayAttrib)\
 X(PFNGLVERTEXARRAYATTRIBFORMATPROC, glVertexArrayAttribFormat)\
 X(PFNGLVERTEXARRAYATTRIBBINDINGPROC, glVertexArrayAttribBinding)\
+X(PFNGLVERTEXARRAYBINDINGDIVISORPROC, glVertexArrayBindingDivisor)\
 \
 X(PFNGLCREATETEXTURESPROC, glCreateTextures)\
 X(PFNGLTEXTUREPARAMETERIPROC, glTextureParameteri)\
@@ -362,6 +363,9 @@ main(void) {
         /* offset */ 0,
         /* stride */ sizeof(vertices[0])
     );
+    // for when using instance drawing (since we're not using it, divisor is 0
+    glVertexArrayBindingDivisor(vertex_array, /* bindingindex */ 0, /* divisor */ 0);
+
     // bind the index buffer (there can be only one index buffer)
     glVertexArrayElementBuffer(vertex_array, index_buffer);
 
