@@ -585,7 +585,7 @@ main(void) {
             glBindTextureUnit(0, main_texture);
             glBindVertexArray(vertex_array);
             glBindBufferBase(GL_UNIFORM_BUFFER, /* bindingindex */ 0, uniform_buffer);
-            glDrawElements(GL_TRIANGLES, LEN(indices), GL_UNSIGNED_SHORT, /* offset */ 0);
+            glDrawElements(GL_TRIANGLES, LEN(indices), GL_UNSIGNED_SHORT, /* offset in bytes */ 0);
         }
 
         // cleanup opengl state (not really required)
