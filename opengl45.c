@@ -35,7 +35,8 @@
 typedef enum { false, true } bool;
 
 #define UNREACHABLE __debugbreak()
-#define ASSERT(invariant) ((invariant) ? 1 : ((void)printf("%s:%d: %s\n", __FILE__, __LINE__, #invariant), (void)UNREACHABLE, 0))
+#define ASSERT(invariant) ((invariant) ? 1 : \
+    ((void)printf("%s:%d: %s (last error: %ld)\n", __FILE__, __LINE__, #invariant, GetLastError()), (void)UNREACHABLE, 0))
 #define LEN(array) (sizeof(array) / sizeof((array)[0]))
 #define OFFSET_OF(type, member) ((size_t)&(((type*)0)->member))
 
@@ -45,6 +46,7 @@ typedef enum { false, true } bool;
 // used opengl procedures table
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #define GL_PROCS \
+X(PFNGLGETSTRINGPROC, glGetString)\
 X(PFNGLENABLEPROC, glEnable)\
 X(PFNGLDEBUGMESSAGECALLBACKPROC, glDebugMessageCallback)\
 X(PFNGLCLIPCONTROLPROC, glClipControl)\
@@ -91,6 +93,7 @@ X(PFNGLBINDTEXTUREUNITPROC, glBindTextureUnit)\
 // used wgl procedures table
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #define WGL_PROCS \
+X(PFNWGLGETEXTENSIONSSTRINGARBPROC, wglGetExtensionsStringARB)\
 X(PFNWGLCHOOSEPIXELFORMATARBPROC, wglChoosePixelFormatARB)\
 X(PFNWGLCREATECONTEXTATTRIBSARBPROC, wglCreateContextAttribsARB)\
 X(PFNWGLSWAPINTERVALEXTPROC, wglSwapIntervalEXT)\
@@ -101,6 +104,8 @@ X(PFNWGLSWAPINTERVALEXTPROC, wglSwapIntervalEXT)\
 GL_PROCS
 WGL_PROCS
 #undef X
+
+#define LOAD_PROC(type, name) do { name = (type)(void*)wglGetProcAddress(#name); ASSERT(name); } while (0)
 
 static const wchar_t* window_class_name = L"DefaultWindowClass";
 static bool should_quit = false;
@@ -186,10 +191,22 @@ main(void) {
         ASSERT(gl_rc);
 
         ASSERT(wglMakeCurrent(dc, gl_rc));
+        ASSERT(wglGetCurrentContext());
 
-        #define X(type, name) name = (type)(void*)wglGetProcAddress(#name); ASSERT(name);
+        #define X(type, name) LOAD_PROC(type, name);
         WGL_PROCS
         #undef X
+
+        const char* extensions = wglGetExtensionsStringARB(dc);
+        printf("\n== legacy extensions ==\n%s\n", extensions);
+
+        LOAD_PROC(PFNGLGETSTRINGPROC, glGetString);
+
+        printf("\n== legacy context ==\n");
+        printf("GL_VENDOR = %s\n", glGetString(GL_VENDOR));
+        printf("GL_RENDERER = %s\n", glGetString(GL_RENDERER));
+        printf("GL_VERSION = %s\n", glGetString(GL_VERSION));
+        printf("GL_SHADING_LANGUAGE_VERSION = %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
 
         ASSERT(wglMakeCurrent(NULL, NULL));
         wglDeleteContext(gl_rc);
@@ -302,6 +319,15 @@ main(void) {
     }
     ASSERT(wglMakeCurrent(dc, gl_rc));
 
+    const char* extensions = wglGetExtensionsStringARB(dc);
+    printf("\n== modern extensions ==\n%s\n", extensions);
+
+    printf("\n== modern context ==\n");
+    printf("GL_VENDOR = %s\n", glGetString(GL_VENDOR));
+    printf("GL_RENDERER = %s\n", glGetString(GL_RENDERER));
+    printf("GL_VERSION = %s\n", glGetString(GL_VERSION));
+    printf("GL_SHADING_LANGUAGE_VERSION = %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
+
     // enable vsync
     wglSwapIntervalEXT(1);
 
@@ -309,7 +335,7 @@ main(void) {
     // get required opengl functions
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-    #define X(type, name) name = (type)(void*)wglGetProcAddress(#name); ASSERT(name);
+    #define X(type, name) LOAD_PROC(type, name);
     GL_PROCS
     #undef X
 
@@ -542,7 +568,7 @@ main(void) {
     // draw
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-    while (true) {
+    for (;;) {
         MSG message;
         while (PeekMessageW(&message, NULL, 0, 0, PM_REMOVE)) {
             TranslateMessage(&message);
