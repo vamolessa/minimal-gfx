@@ -18,17 +18,15 @@
 // cl opengl45.c
 //
 
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <windows.h>
-
 #pragma comment (lib, "gdi32.lib")
 #pragma comment (lib, "user32.lib")
 #pragma comment (lib, "opengl32.lib")
 
-#include <GL/gl.h>
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <glcorearb.h> // https://www.khronos.org/registry/OpenGL/api/GL/glcorearb.h
 #include <wglext.h> // https://www.khronos.org/registry/OpenGL/api/GL/wglext.h
+#include <GL/gl.h>
 // NOTE: download https://www.khronos.org/registry/EGL/api/KHR/khrplatform.h and put in "KHR" folder
 
 #include <stdio.h>
