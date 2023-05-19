@@ -18,17 +18,18 @@
 // cl opengl45.c
 //
 
-#pragma comment (lib, "user32")
-#pragma comment (lib, "gdi32")
-#pragma comment (lib, "opengl32")
-
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
 
+#pragma comment (lib, "gdi32.lib")
+#pragma comment (lib, "user32.lib")
+#pragma comment (lib, "opengl32.lib")
+
+#include <GL/gl.h>
 #include <glcorearb.h> // https://www.khronos.org/registry/OpenGL/api/GL/glcorearb.h
 #include <wglext.h> // https://www.khronos.org/registry/OpenGL/api/GL/wglext.h
-// NOTE: https://www.khronos.org/registry/EGL/api/KHR/khrplatform.h and put in "KHR" folder
+// NOTE: download https://www.khronos.org/registry/EGL/api/KHR/khrplatform.h and put in "KHR" folder
 
 #include <stdio.h>
 
@@ -46,20 +47,14 @@ typedef enum { false, true } bool;
 // used opengl procedures table
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #define GL_PROCS \
-X(PFNGLGETSTRINGPROC, glGetString)\
-X(PFNGLENABLEPROC, glEnable)\
 X(PFNGLDEBUGMESSAGECALLBACKPROC, glDebugMessageCallback)\
 X(PFNGLCLIPCONTROLPROC, glClipControl)\
-X(PFNGLFRONTFACEPROC, glFrontFace)\
-X(PFNGLVIEWPORTPROC, glViewport)\
-X(PFNGLDEPTHFUNCPROC, glDepthFunc)\
 X(PFNGLCLEARNAMEDFRAMEBUFFERFVPROC, glClearNamedFramebufferfv)\
 \
 X(PFNGLCREATEBUFFERSPROC, glCreateBuffers)\
 X(PFNGLCREATEVERTEXARRAYSPROC, glCreateVertexArrays)\
 X(PFNGLBINDVERTEXARRAYPROC, glBindVertexArray)\
 X(PFNGLBINDBUFFERBASEPROC, glBindBufferBase)\
-X(PFNGLDRAWELEMENTSPROC, glDrawElements)\
 \
 X(PFNGLCREATESHADERPROGRAMVPROC, glCreateShaderProgramv)\
 X(PFNGLCREATESHADERPROC, glCreateShader)\
@@ -140,19 +135,34 @@ gl_debug_message_callback(
 
     #undef PREFIX
 
-    if (
-        type == GL_DEBUG_SOURCE_API || type == GL_DEBUG_SOURCE_WINDOW_SYSTEM || type == GL_DEBUG_SOURCE_SHADER_COMPILER ||
-        type == GL_DEBUG_SOURCE_THIRD_PARTY || type == GL_DEBUG_SOURCE_APPLICATION
-    ) {
+    bool error;
+
+    error =
+        type == GL_DEBUG_SOURCE_API ||
+        type == GL_DEBUG_SOURCE_WINDOW_SYSTEM ||
+        type == GL_DEBUG_SOURCE_SHADER_COMPILER ||
+        type == GL_DEBUG_SOURCE_THIRD_PARTY ||
+        type == GL_DEBUG_SOURCE_APPLICATION;
+    if (error) {
         UNREACHABLE;
     }
-    if (severity == GL_DEBUG_SEVERITY_HIGH || severity == GL_DEBUG_SEVERITY_MEDIUM || severity == GL_DEBUG_SEVERITY_LOW) {
+
+    error =
+        severity == GL_DEBUG_SEVERITY_HIGH ||
+        severity == GL_DEBUG_SEVERITY_MEDIUM ||
+        severity == GL_DEBUG_SEVERITY_LOW;
+    if (error) {
         UNREACHABLE;
     }
 }
 
-int
-main(void) {
+int WINAPI
+WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLine, int nCmdShow) {
+    (void)hInstance;
+    (void)hPrevInstance;
+    (void)pCmdLine;
+    (void)nCmdShow;
+
     SetProcessDPIAware();
 
     HINSTANCE hinstance = GetModuleHandleW(NULL);
@@ -191,7 +201,6 @@ main(void) {
         ASSERT(gl_rc);
 
         ASSERT(wglMakeCurrent(dc, gl_rc));
-        ASSERT(wglGetCurrentContext());
 
         #define X(type, name) LOAD_PROC(type, name);
         WGL_PROCS
@@ -200,7 +209,7 @@ main(void) {
         const char* extensions = wglGetExtensionsStringARB(dc);
         printf("\n== legacy extensions ==\n%s\n", extensions);
 
-        LOAD_PROC(PFNGLGETSTRINGPROC, glGetString);
+        //LOAD_PROC(PFNGLGETSTRINGPROC, glGetString);
 
         printf("\n== legacy context ==\n");
         printf("GL_VENDOR = %s\n", glGetString(GL_VENDOR));
@@ -298,7 +307,8 @@ main(void) {
     {
         // create modern OpenGL 4.5 context
 
-        int context_flags = WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB;
+        int context_flags = 0;
+        context_flags |= WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB;
 #if defined(DEBUG_LAYER)
         // ask for debug context
         // this is so we can enable debug callback
